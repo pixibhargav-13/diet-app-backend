@@ -49,7 +49,7 @@ public class RevenueService {
         return new RevenueSummary()
                 .totalRevenue(BigDecimal.valueOf(total))
                 .monthlyRevenue(BigDecimal.valueOf(monthly))
-                .monthOverMonthChange(0.0)
+                .monthOverMonthChange(BigDecimal.ZERO)
                 .byPaymentMethod(byMethod)
                 .periodFrom(effectiveFrom)
                 .periodTo(effectiveTo);
