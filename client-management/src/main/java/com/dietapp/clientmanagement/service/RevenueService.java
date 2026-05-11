@@ -47,8 +47,8 @@ public class RevenueService {
                         Collectors.summingDouble(t -> t.getAmount().doubleValue())));
 
         return new RevenueSummary()
-                .totalRevenue(total)
-                .monthlyRevenue(monthly)
+                .totalRevenue(BigDecimal.valueOf(total))
+                .monthlyRevenue(BigDecimal.valueOf(monthly))
                 .monthOverMonthChange(0.0)
                 .byPaymentMethod(byMethod)
                 .periodFrom(effectiveFrom)
@@ -78,7 +78,7 @@ public class RevenueService {
                 .id(e.getId())
                 .clientId(e.getClientId())
                 .clientName(clientName)
-                .amount(e.getAmount().doubleValue())
+                .amount(e.getAmount())
                 .paymentMethod(e.getPaymentMethod())
                 .description(e.getDescription())
                 .createdAt(e.getCreatedAt() != null ? e.getCreatedAt().atOffset(ZoneOffset.UTC) : null);

@@ -44,12 +44,12 @@ public class OnboardingService {
         if (request.getGender() != null)
             entity.setGender(request.getGender().getValue());
         if (request.getHeightCm() != null)
-            entity.setHeightCm(BigDecimal.valueOf(request.getHeightCm()));
+            entity.setHeightCm(request.getHeightCm());
         if (request.getWeightKg() != null) {
-            entity.setWeightKg(BigDecimal.valueOf(request.getWeightKg()));
+            entity.setWeightKg(request.getWeightKg());
             if (request.getHeightCm() != null || entity.getHeightCm() != null) {
-                double height = entity.getHeightCm() != null ? entity.getHeightCm().doubleValue() : request.getHeightCm();
-                double bmi = (request.getWeightKg() / (height / 100.0) / (height / 100.0));
+                double height = entity.getHeightCm() != null ? entity.getHeightCm().doubleValue() : request.getHeightCm().doubleValue();
+                double bmi = (request.getWeightKg().doubleValue() / (height / 100.0) / (height / 100.0));
                 entity.setBmiValue(BigDecimal.valueOf(bmi).setScale(2, RoundingMode.HALF_UP));
                 entity.setBmiCategory(bmiCategory(bmi));
             }
@@ -89,9 +89,9 @@ public class OnboardingService {
                 .complete(e.getComplete())
                 .updatedAt(e.getUpdatedAt() != null ? e.getUpdatedAt().atOffset(ZoneOffset.UTC) : null);
 
-        if (e.getHeightCm() != null) p.setHeightCm(e.getHeightCm().doubleValue());
-        if (e.getWeightKg() != null) p.setWeightKg(e.getWeightKg().doubleValue());
-        if (e.getBmiValue() != null)  p.setBmiValue(e.getBmiValue().doubleValue());
+        if (e.getHeightCm() != null) p.setHeightCm(e.getHeightCm());
+        if (e.getWeightKg() != null) p.setWeightKg(e.getWeightKg());
+        if (e.getBmiValue() != null)  p.setBmiValue(e.getBmiValue());
         p.setBmiCategory(e.getBmiCategory());
 
         return p;

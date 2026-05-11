@@ -79,9 +79,9 @@ public class DietPlanService {
         entity.setName(req.getName());
         entity.setDescription(req.getDescription());
         entity.setTargetCalories(req.getTargetCalories());
-        if (req.getTargetProteinG() != null) entity.setTargetProteinG(BigDecimal.valueOf(req.getTargetProteinG()));
-        if (req.getTargetCarbsG()  != null) entity.setTargetCarbsG(BigDecimal.valueOf(req.getTargetCarbsG()));
-        if (req.getTargetFatG()    != null) entity.setTargetFatG(BigDecimal.valueOf(req.getTargetFatG()));
+        if (req.getTargetProteinG() != null) entity.setTargetProteinG(req.getTargetProteinG());
+        if (req.getTargetCarbsG()  != null) entity.setTargetCarbsG(req.getTargetCarbsG());
+        if (req.getTargetFatG()    != null) entity.setTargetFatG(req.getTargetFatG());
         return entity;
     }
 
@@ -95,9 +95,9 @@ public class DietPlanService {
                 .assignedClientCount((int) assigned)
                 .createdAt(e.getCreatedAt() != null ? e.getCreatedAt().atOffset(ZoneOffset.UTC) : null);
 
-        if (e.getTargetProteinG() != null) r.setTargetProteinG(e.getTargetProteinG().doubleValue());
-        if (e.getTargetCarbsG()  != null) r.setTargetCarbsG(e.getTargetCarbsG().doubleValue());
-        if (e.getTargetFatG()    != null) r.setTargetFatG(e.getTargetFatG().doubleValue());
+        if (e.getTargetProteinG() != null) r.setTargetProteinG(e.getTargetProteinG());
+        if (e.getTargetCarbsG()  != null) r.setTargetCarbsG(e.getTargetCarbsG());
+        if (e.getTargetFatG()    != null) r.setTargetFatG(e.getTargetFatG());
         return r;
     }
 }
