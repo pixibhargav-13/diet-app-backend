@@ -202,7 +202,8 @@ public class ShopService {
     }
 
     private ProductResponse toProductResponse(ProductEntity e) {
-        Double avgRating = reviewRepository.findAverageRatingByProductId(e.getId());
+        Double avgRatingRaw = reviewRepository.findAverageRatingByProductId(e.getId());
+        BigDecimal avgRating = avgRatingRaw != null ? BigDecimal.valueOf(avgRatingRaw) : null;
         long reviewCount = reviewRepository.findByProductIdOrderByCreatedAtDesc(e.getId()).size();
 
         return new ProductResponse()
