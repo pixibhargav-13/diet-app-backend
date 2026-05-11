@@ -14,8 +14,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.web.context.request.NativeWebRequest;
+
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -121,6 +124,11 @@ public class ProgressController implements WeightTrackingApi, MeasurementsApi, S
     @Override
     public ResponseEntity<HydrationSummary> getHydrationSummary() {
         return ResponseEntity.ok(progressService.getHydrationSummary(currentUserId()));
+    }
+
+    @Override
+    public Optional<NativeWebRequest> getRequest() {
+        return Optional.empty();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

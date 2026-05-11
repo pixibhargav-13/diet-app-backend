@@ -38,7 +38,7 @@ public class ProgressService {
     public WeightEntry logWeight(Long userId, WeightRequest request) {
         WeightEntryEntity entity = WeightEntryEntity.builder()
                 .userId(userId)
-                .weightKg(BigDecimal.valueOf(request.getWeightKg()))
+                .weightKg(request.getWeightKg())
                 .date(request.getDate())
                 .notes(request.getNotes())
                 .build();
@@ -54,7 +54,7 @@ public class ProgressService {
     @Transactional(readOnly = true)
     public WeightGoal getWeightGoal(Long userId) {
         return weightGoalRepository.findByUserId(userId)
-                .map(e -> new WeightGoal().goalWeightKg(e.getGoalWeightKg().doubleValue()))
+                .map(e -> new WeightGoal().goalWeightKg(e.getGoalWeightKg()))
                 .orElse(new WeightGoal());
     }
 
@@ -63,10 +63,10 @@ public class ProgressService {
         WeightGoalEntity entity = weightGoalRepository.findByUserId(userId)
                 .orElseGet(() -> WeightGoalEntity.builder().userId(userId).goalWeightKg(BigDecimal.ZERO).build());
         if (request.getGoalWeightKg() != null) {
-            entity.setGoalWeightKg(BigDecimal.valueOf(request.getGoalWeightKg()));
+            entity.setGoalWeightKg(request.getGoalWeightKg());
         }
         weightGoalRepository.save(entity);
-        return new WeightGoal().goalWeightKg(entity.getGoalWeightKg().doubleValue());
+        return new WeightGoal().goalWeightKg(entity.getGoalWeightKg());
     }
 
     // ── Measurements ──────────────────────────────────────────────────────────
@@ -84,11 +84,11 @@ public class ProgressService {
         MeasurementEntryEntity entity = MeasurementEntryEntity.builder()
                 .userId(userId)
                 .date(request.getDate())
-                .waistCm(request.getWaistCm() != null ? BigDecimal.valueOf(request.getWaistCm()) : null)
-                .hipCm(request.getHipCm() != null ? BigDecimal.valueOf(request.getHipCm()) : null)
-                .chestCm(request.getChestCm() != null ? BigDecimal.valueOf(request.getChestCm()) : null)
-                .armCm(request.getArmCm() != null ? BigDecimal.valueOf(request.getArmCm()) : null)
-                .thighCm(request.getThighCm() != null ? BigDecimal.valueOf(request.getThighCm()) : null)
+                .waistCm(request.getWaistCm())
+                .hipCm(request.getHipCm())
+                .chestCm(request.getChestCm())
+                .armCm(request.getArmCm())
+                .thighCm(request.getThighCm())
                 .build();
         return toMeasurementEntry(measurementEntryRepository.save(entity));
     }
@@ -194,9 +194,9 @@ public class ProgressService {
                 .date(today)
                 .totalMl(totalMl)
                 .goalMl(goalMl)
-                .percentageComplete(pct)
+                .percentageComplete(BigDecimal.valueOf(pct))
                 .weeklyStreakDays(streak)
-                .consistencyPercent(streak / 7.0 * 100);
+                .consistencyPercent(BigDecimal.valueOf(streak / 7.0 * 100));
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -216,7 +216,7 @@ public class ProgressService {
         return new WeightEntry()
                 .id(e.getId())
                 .userId(e.getUserId())
-                .weightKg(e.getWeightKg().doubleValue())
+                .weightKg(e.getWeightKg())
                 .date(e.getDate())
                 .notes(e.getNotes())
                 .createdAt(e.getCreatedAt() != null ? e.getCreatedAt().atOffset(ZoneOffset.UTC) : null);
@@ -228,11 +228,11 @@ public class ProgressService {
                 .userId(e.getUserId())
                 .date(e.getDate())
                 .createdAt(e.getCreatedAt() != null ? e.getCreatedAt().atOffset(ZoneOffset.UTC) : null);
-        if (e.getWaistCm() != null) entry.setWaistCm(e.getWaistCm().doubleValue());
-        if (e.getHipCm() != null) entry.setHipCm(e.getHipCm().doubleValue());
-        if (e.getChestCm() != null) entry.setChestCm(e.getChestCm().doubleValue());
-        if (e.getArmCm() != null) entry.setArmCm(e.getArmCm().doubleValue());
-        if (e.getThighCm() != null) entry.setThighCm(e.getThighCm().doubleValue());
+        if (e.getWaistCm() != null) entry.setWaistCm(e.getWaistCm());
+        if (e.getHipCm() != null) entry.setHipCm(e.getHipCm());
+        if (e.getChestCm() != null) entry.setChestCm(e.getChestCm());
+        if (e.getArmCm() != null) entry.setArmCm(e.getArmCm());
+        if (e.getThighCm() != null) entry.setThighCm(e.getThighCm());
         return entry;
     }
 

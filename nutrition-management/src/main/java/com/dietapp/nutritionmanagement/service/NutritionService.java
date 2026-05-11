@@ -41,11 +41,11 @@ public class NutritionService {
                 .date(LocalDate.now())
                 .mealType(request.getMealType().getValue())
                 .mealName(request.getMealName())
-                .kcal(BigDecimal.valueOf(request.getKcal()))
-                .protein(request.getProtein() != null ? BigDecimal.valueOf(request.getProtein()) : BigDecimal.ZERO)
-                .carbs(request.getCarbs() != null ? BigDecimal.valueOf(request.getCarbs()) : BigDecimal.ZERO)
-                .fat(request.getFat() != null ? BigDecimal.valueOf(request.getFat()) : BigDecimal.ZERO)
-                .fiber(request.getFiber() != null ? BigDecimal.valueOf(request.getFiber()) : BigDecimal.ZERO)
+                .kcal(request.getKcal())
+                .protein(request.getProtein() != null ? request.getProtein() : BigDecimal.ZERO)
+                .carbs(request.getCarbs() != null ? request.getCarbs() : BigDecimal.ZERO)
+                .fat(request.getFat() != null ? request.getFat() : BigDecimal.ZERO)
+                .fiber(request.getFiber() != null ? request.getFiber() : BigDecimal.ZERO)
                 .source(request.getSource() != null ? request.getSource().getValue() : "custom")
                 .photoUrl(request.getPhotoUrl())
                 .build();
@@ -68,16 +68,18 @@ public class NutritionService {
         LocalDate target = date != null ? date : LocalDate.now();
         List<MealLogEntity> logs = mealLogRepository.findByUserIdAndDateOrderByCreatedAtAsc(userId, target);
 
-        double totalKcal = logs.stream().mapToDouble(l -> l.getKcal().doubleValue()).sum();
-        double totalProtein = logs.stream().mapToDouble(l -> l.getProtein().doubleValue()).sum();
-        double totalCarbs = logs.stream().mapToDouble(l -> l.getCarbs().doubleValue()).sum();
-        double totalFat = logs.stream().mapToDouble(l -> l.getFat().doubleValue()).sum();
-        double totalFiber = logs.stream().mapToDouble(l -> l.getFiber().doubleValue()).sum();
+        BigDecimal totalKcal = logs.stream().map(l -> l.getKcal()).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalProtein = logs.stream().map(l -> l.getProtein()).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalCarbs = logs.stream().map(l -> l.getCarbs()).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalFat = logs.stream().map(l -> l.getFat()).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalFiber = logs.stream().map(l -> l.getFiber()).reduce(BigDecimal.ZERO, BigDecimal::add);
 
         MacroTotals consumed = new MacroTotals()
                 .kcal(totalKcal).protein(totalProtein).carbs(totalCarbs).fat(totalFat).fiber(totalFiber);
 
-        MacroTotals goal = new MacroTotals().kcal(2000.0).protein(0.0).carbs(0.0).fat(0.0).fiber(0.0);
+        MacroTotals goal = new MacroTotals()
+                .kcal(BigDecimal.valueOf(2000)).protein(BigDecimal.ZERO)
+                .carbs(BigDecimal.ZERO).fat(BigDecimal.ZERO).fiber(BigDecimal.ZERO);
 
         return new DaySummary()
                 .date(target)
@@ -208,11 +210,11 @@ public class NutritionService {
         if (e.getSource() != null) {
             try { entry.setSource(MealLogEntry.SourceEnum.fromValue(e.getSource())); } catch (Exception ignored) {}
         }
-        if (e.getKcal() != null) entry.setKcal(e.getKcal().doubleValue());
-        if (e.getProtein() != null) entry.setProtein(e.getProtein().doubleValue());
-        if (e.getCarbs() != null) entry.setCarbs(e.getCarbs().doubleValue());
-        if (e.getFat() != null) entry.setFat(e.getFat().doubleValue());
-        if (e.getFiber() != null) entry.setFiber(e.getFiber().doubleValue());
+        if (e.getKcal() != null) entry.setKcal(e.getKcal());
+        if (e.getProtein() != null) entry.setProtein(e.getProtein());
+        if (e.getCarbs() != null) entry.setCarbs(e.getCarbs());
+        if (e.getFat() != null) entry.setFat(e.getFat());
+        if (e.getFiber() != null) entry.setFiber(e.getFiber());
         return entry;
     }
 
@@ -237,11 +239,11 @@ public class NutritionService {
         }
         if (e.getIngredients() != null)
             item.setIngredients(Arrays.asList(e.getIngredients().split(",")));
-        if (e.getKcal() != null) item.setKcal(e.getKcal().doubleValue());
-        if (e.getProtein() != null) item.setProtein(e.getProtein().doubleValue());
-        if (e.getCarbs() != null) item.setCarbs(e.getCarbs().doubleValue());
-        if (e.getFat() != null) item.setFat(e.getFat().doubleValue());
-        if (e.getFiber() != null) item.setFiber(e.getFiber().doubleValue());
+        if (e.getKcal() != null) item.setKcal(e.getKcal());
+        if (e.getProtein() != null) item.setProtein(e.getProtein());
+        if (e.getCarbs() != null) item.setCarbs(e.getCarbs());
+        if (e.getFat() != null) item.setFat(e.getFat());
+        if (e.getFiber() != null) item.setFiber(e.getFiber());
         return item;
     }
 
@@ -254,11 +256,11 @@ public class NutritionService {
                 .prepNotes(item.getPrepNotes())
                 .ingredients(item.getIngredients() != null ? String.join(",", item.getIngredients()) : null)
                 .build();
-        if (item.getKcal() != null) entity.setKcal(BigDecimal.valueOf(item.getKcal()));
-        if (item.getProtein() != null) entity.setProtein(BigDecimal.valueOf(item.getProtein()));
-        if (item.getCarbs() != null) entity.setCarbs(BigDecimal.valueOf(item.getCarbs()));
-        if (item.getFat() != null) entity.setFat(BigDecimal.valueOf(item.getFat()));
-        if (item.getFiber() != null) entity.setFiber(BigDecimal.valueOf(item.getFiber()));
+        if (item.getKcal() != null) entity.setKcal(item.getKcal());
+        if (item.getProtein() != null) entity.setProtein(item.getProtein());
+        if (item.getCarbs() != null) entity.setCarbs(item.getCarbs());
+        if (item.getFat() != null) entity.setFat(item.getFat());
+        if (item.getFiber() != null) entity.setFiber(item.getFiber());
         return entity;
     }
 
@@ -267,12 +269,12 @@ public class NutritionService {
                 .id(e.getId())
                 .name(e.getName())
                 .source(e.getSource());
-        if (e.getServingSizeG() != null) item.setServingSizeG(e.getServingSizeG().doubleValue());
-        if (e.getKcalPer100g() != null) item.setKcalPer100g(e.getKcalPer100g().doubleValue());
-        if (e.getProteinPer100g() != null) item.setProteinPer100g(e.getProteinPer100g().doubleValue());
-        if (e.getCarbsPer100g() != null) item.setCarbsPer100g(e.getCarbsPer100g().doubleValue());
-        if (e.getFatPer100g() != null) item.setFatPer100g(e.getFatPer100g().doubleValue());
-        if (e.getFiberPer100g() != null) item.setFiberPer100g(e.getFiberPer100g().doubleValue());
+        if (e.getServingSizeG() != null) item.setServingSizeG(e.getServingSizeG());
+        if (e.getKcalPer100g() != null) item.setKcalPer100g(e.getKcalPer100g());
+        if (e.getProteinPer100g() != null) item.setProteinPer100g(e.getProteinPer100g());
+        if (e.getCarbsPer100g() != null) item.setCarbsPer100g(e.getCarbsPer100g());
+        if (e.getFatPer100g() != null) item.setFatPer100g(e.getFatPer100g());
+        if (e.getFiberPer100g() != null) item.setFiberPer100g(e.getFiberPer100g());
         return item;
     }
 }

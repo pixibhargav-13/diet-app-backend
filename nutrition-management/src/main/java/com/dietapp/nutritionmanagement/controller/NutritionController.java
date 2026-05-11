@@ -15,8 +15,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.web.context.request.NativeWebRequest;
+
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -112,6 +115,11 @@ public class NutritionController implements MealLogsApi, MealPlansApi, FoodLooku
     @Override
     public ResponseEntity<GroceryList> getGroceryList(LocalDate date) {
         return ResponseEntity.ok(nutritionService.getGroceryList(currentUserId(), date));
+    }
+
+    @Override
+    public Optional<NativeWebRequest> getRequest() {
+        return Optional.empty();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

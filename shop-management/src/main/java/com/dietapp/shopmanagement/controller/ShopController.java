@@ -15,7 +15,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.web.context.request.NativeWebRequest;
+
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -120,6 +123,11 @@ public class ShopController implements ProductsApi, ReviewsApi, OrdersApi, Wishl
     @Override
     public ResponseEntity<WishlistResponse> removeFromWishlist(Long productId) {
         return ResponseEntity.ok(shopService.removeFromWishlist(currentUserId(), productId));
+    }
+
+    @Override
+    public Optional<NativeWebRequest> getRequest() {
+        return Optional.empty();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

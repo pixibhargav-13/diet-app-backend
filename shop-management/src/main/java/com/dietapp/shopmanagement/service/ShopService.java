@@ -191,7 +191,7 @@ public class ShopService {
     private ProductEntity buildProductEntity(ProductEntity entity, ProductRequest req) {
         entity.setName(req.getName());
         entity.setDescription(req.getDescription());
-        entity.setPrice(BigDecimal.valueOf(req.getPrice()));
+        entity.setPrice(req.getPrice());
         entity.setCategory(req.getCategory());
         entity.setImageUrl(req.getImageUrl());
         entity.setNutritionInfo(req.getNutritionInfo());
@@ -209,7 +209,7 @@ public class ShopService {
                 .id(e.getId())
                 .name(e.getName())
                 .description(e.getDescription())
-                .price(e.getPrice().doubleValue())
+                .price(e.getPrice())
                 .category(e.getCategory())
                 .imageUrl(e.getImageUrl())
                 .stockLevel(e.getStockLevel())
@@ -243,8 +243,8 @@ public class ShopService {
                         .productId(i.getProductId())
                         .productName(i.getProductName())
                         .quantity(i.getQuantity())
-                        .unitPrice(i.getUnitPrice().doubleValue())
-                        .subtotal(i.getSubtotal().doubleValue())
+                        .unitPrice(i.getUnitPrice())
+                        .subtotal(i.getSubtotal())
         ).toList();
 
         DeliveryAddress address = new DeliveryAddress()
@@ -258,9 +258,9 @@ public class ShopService {
                 .userId(e.getUserId())
                 .clientName(clientName)
                 .items(items)
-                .subtotal(e.getSubtotal().doubleValue())
-                .handlingFee(e.getHandlingFee().doubleValue())
-                .total(e.getTotal().doubleValue())
+                .subtotal(e.getSubtotal())
+                .handlingFee(e.getHandlingFee())
+                .total(e.getTotal())
                 .paymentMethod(e.getPaymentMethod())
                 .deliveryAddress(address)
                 .createdAt(e.getCreatedAt() != null ? e.getCreatedAt().atOffset(ZoneOffset.UTC) : null);

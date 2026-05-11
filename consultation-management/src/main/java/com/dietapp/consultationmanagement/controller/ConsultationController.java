@@ -14,7 +14,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.web.context.request.NativeWebRequest;
+
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -98,6 +101,11 @@ public class ConsultationController implements AppointmentsApi, PreConsultApi, S
     @Override
     public ResponseEntity<SessionSummaryResponse> rateSession(Long id, RateSessionRequest rateSessionRequest) {
         return ResponseEntity.ok(consultationService.rateSession(id, rateSessionRequest));
+    }
+
+    @Override
+    public Optional<NativeWebRequest> getRequest() {
+        return Optional.empty();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
