@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+      </profile>
+      <profile name="Annotation profile for diet-app" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <option name="mapstruct.defaultComponentModel" value="spring" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.40/lombok-1.18.40.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct-processor/1.5.5.Final/mapstruct-processor-1.5.5.Final.jar" />
+        </processorPath>
+        <module name="web-app" />
+        <module name="session-management" />
+        <module name="progress-management" />
+        <module name="user-management" />
+        <module name="consultation-management" />
+        <module name="nutrition-management" />
+        <module name="shop-management" />
+        <module name="client-management" />
+        <module name="api-contract" />
+      </profile>
+    </annotationProcessing>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="api-contract" options="-parameters -Amapstruct.defaultComponentModel=spring" />
+      <module name="client-management" options="-parameters -Amapstruct.defaultComponentModel=spring" />
+      <module name="consultation-management" options="-parameters -Amapstruct.defaultComponentModel=spring" />
+      <module name="diet-app-backend" options="" />
+      <module name="nutrition-management" options="-parameters -Amapstruct.defaultComponentModel=spring" />
+      <module name="progress-management" options="-parameters -Amapstruct.defaultComponentModel=spring" />
+      <module name="session-management" options="-parameters -Amapstruct.defaultComponentModel=spring" />
+      <module name="shop-management" options="-parameters -Amapstruct.defaultComponentModel=spring" />
+      <module name="user-management" options="-parameters -Amapstruct.defaultComponentModel=spring" />
+      <module name="web-app" options="-parameters -Amapstruct.defaultComponentModel=spring" />
+    </option>
+  </component>
+</project>

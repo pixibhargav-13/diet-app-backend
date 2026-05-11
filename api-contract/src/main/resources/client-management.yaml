@@ -1,0 +1,793 @@
+openapi: "3.0.3"
+info:
+  title: Diet App Client Management API
+  description: Admin client management, user profiles, onboarding, compliance, diet plans and revenue
+  version: "1.0.0"
+
+servers:
+  - url: http://localhost:8080
+    description: Local Development
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Clients
+    description: Admin view of all client profiles and activity
+  - name: Onboarding
+    description: Client health profile and onboarding data
+  - name: DietPlans
+    description: Create, manage and assign meal plans to clients
+  - name: Revenue
+    description: Admin revenue dashboard and transaction history
+
+paths:
+
+  # ── Clients ──────────────────────────────────────────────────────────────────
+
+  /api/v1/clients:
+    get:
+      tags: [Clients]
+      summary: Get all clients with optional filters (Admin)
+      operationId: getAllClients
+      parameters:
+        - name: search
+          in: query
+          required: false
+          description: Search by name or email
+          schema:
+            type: string
+        - name: goal
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, inactive]
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [name, compliance, lastActive]
+            default: name
+      responses:
+        '200':
+          description: List of clients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClientSummary'
+
+  /api/v1/clients/{clientId}:
+    get:
+      tags: [Clients]
+      summary: Get full profile for a specific client (Admin)
+      operationId: getClientProfile
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+      responses:
+        '200':
+          description: Client profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientProfile'
+    patch:
+      tags: [Clients]
+      summary: Update a client's goal, plan or status (Admin)
+      operationId: updateClientProfile
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClientRequest'
+      responses:
+        '200':
+          description: Updated client profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientProfile'
+
+  /api/v1/clients/{clientId}/compliance:
+    patch:
+      tags: [Clients]
+      summary: Update client's compliance score (Admin)
+      operationId: updateCompliance
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplianceUpdateRequest'
+      responses:
+        '200':
+          description: Updated compliance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientProfile'
+
+  /api/v1/clients/{clientId}/notes:
+    get:
+      tags: [Clients]
+      summary: Get admin notes for a client
+      operationId: getClientNotes
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+      responses:
+        '200':
+          description: List of notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClientNote'
+    post:
+      tags: [Clients]
+      summary: Add an admin note for a client
+      operationId: addClientNote
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientNoteRequest'
+      responses:
+        '201':
+          description: Created note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientNote'
+
+  /api/v1/clients/{clientId}/feedback:
+    post:
+      tags: [Clients]
+      summary: Submit feedback on a client's meal log (Admin)
+      operationId: submitMealFeedback
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MealFeedbackRequest'
+      responses:
+        '201':
+          description: Feedback submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MealFeedback'
+
+  /api/v1/clients/admin/dashboard:
+    get:
+      tags: [Clients]
+      summary: Get admin dashboard stats
+      operationId: getAdminDashboardStats
+      responses:
+        '200':
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDashboardStats'
+
+  /api/v1/clients/admin/activity:
+    get:
+      tags: [Clients]
+      summary: Get today's activity feed across all clients (Admin)
+      operationId: getActivityFeed
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Activity feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivityItem'
+
+  # ── Onboarding ───────────────────────────────────────────────────────────────
+
+  /api/v1/onboarding:
+    get:
+      tags: [Onboarding]
+      summary: Get the current user's onboarding/health profile
+      operationId: getOnboardingProfile
+      responses:
+        '200':
+          description: Health profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingProfile'
+        '204':
+          description: No onboarding data yet
+    post:
+      tags: [Onboarding]
+      summary: Submit or update the onboarding health profile
+      operationId: submitOnboarding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingRequest'
+      responses:
+        '200':
+          description: Saved onboarding profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingProfile'
+
+  # ── Diet Plans ───────────────────────────────────────────────────────────────
+
+  /api/v1/diet-plans:
+    get:
+      tags: [DietPlans]
+      summary: Get all diet plans (Admin)
+      operationId: getAllDietPlans
+      responses:
+        '200':
+          description: All diet plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DietPlanResponse'
+    post:
+      tags: [DietPlans]
+      summary: Create a new diet plan (Admin)
+      operationId: createDietPlan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DietPlanRequest'
+      responses:
+        '201':
+          description: Created diet plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DietPlanResponse'
+
+  /api/v1/diet-plans/{id}:
+    get:
+      tags: [DietPlans]
+      summary: Get a diet plan by ID
+      operationId: getDietPlan
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Diet plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DietPlanResponse'
+    put:
+      tags: [DietPlans]
+      summary: Update a diet plan (Admin)
+      operationId: updateDietPlan
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DietPlanRequest'
+      responses:
+        '200':
+          description: Updated diet plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DietPlanResponse'
+    delete:
+      tags: [DietPlans]
+      summary: Delete a diet plan (Admin)
+      operationId: deleteDietPlan
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Deleted
+
+  /api/v1/diet-plans/{id}/assign:
+    post:
+      tags: [DietPlans]
+      summary: Assign a diet plan to a client (Admin)
+      operationId: assignDietPlan
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignPlanRequest'
+      responses:
+        '200':
+          description: Plan assigned successfully
+
+  /api/v1/diet-plans/client/{clientId}/current:
+    get:
+      tags: [DietPlans]
+      summary: Get the current assigned diet plan for a client
+      operationId: getClientCurrentPlan
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+      responses:
+        '200':
+          description: Assigned plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DietPlanResponse'
+        '204':
+          description: No plan assigned
+
+  # ── Revenue ──────────────────────────────────────────────────────────────────
+
+  /api/v1/revenue/summary:
+    get:
+      tags: [Revenue]
+      summary: Get revenue summary for a period (Admin)
+      operationId: getRevenueSummary
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Revenue summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevenueSummary'
+
+  /api/v1/revenue/transactions:
+    get:
+      tags: [Revenue]
+      summary: Get transaction history (Admin)
+      operationId: getTransactions
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [order, session_package, consultation]
+      responses:
+        '200':
+          description: Transaction list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    ClientIdPath:
+      name: clientId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+  schemas:
+
+    ClientSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        goal:
+          type: string
+        dietPlan:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+        complianceScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+        lastActive:
+          type: string
+          format: date-time
+
+    ClientProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        goal:
+          type: string
+        dietPlan:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+        complianceScore:
+          type: integer
+        lastActive:
+          type: string
+          format: date-time
+        healthConditions:
+          type: array
+          items:
+            type: string
+        allergies:
+          type: string
+        dietaryPreference:
+          type: string
+        onboardingComplete:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    UpdateClientRequest:
+      type: object
+      properties:
+        goal:
+          type: string
+        dietPlan:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+
+    ComplianceUpdateRequest:
+      type: object
+      required:
+        - complianceScore
+      properties:
+        complianceScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    ClientNote:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        clientId:
+          type: integer
+          format: int64
+        note:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ClientNoteRequest:
+      type: object
+      required:
+        - note
+      properties:
+        note:
+          type: string
+          minLength: 1
+
+    MealFeedback:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        clientId:
+          type: integer
+          format: int64
+        mealLogId:
+          type: integer
+          format: int64
+        feedback:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        createdAt:
+          type: string
+          format: date-time
+
+    MealFeedbackRequest:
+      type: object
+      required:
+        - feedback
+      properties:
+        mealLogId:
+          type: integer
+          format: int64
+        feedback:
+          type: string
+          minLength: 1
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+
+    AdminDashboardStats:
+      type: object
+      properties:
+        totalClients:
+          type: integer
+        activeToday:
+          type: integer
+        sessionsThisWeek:
+          type: integer
+        monthlyRevenue:
+          type: number
+        inactiveClientsCount:
+          type: integer
+
+    ActivityItem:
+      type: object
+      properties:
+        clientId:
+          type: integer
+          format: int64
+        clientName:
+          type: string
+        activityType:
+          type: string
+          enum: [meal_logged, water_logged, weight_logged, consultation_booked, session_completed]
+        description:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+
+    OnboardingProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        healthConditions:
+          type: array
+          items:
+            type: string
+        allergies:
+          type: string
+        dietaryPreference:
+          type: string
+          enum: [vegetarian, vegan, non_vegetarian, eggetarian]
+        goal:
+          type: string
+        age:
+          type: integer
+        gender:
+          type: string
+          enum: [male, female, other]
+        heightCm:
+          type: number
+        weightKg:
+          type: number
+        bmiValue:
+          type: number
+        bmiCategory:
+          type: string
+        complete:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+
+    OnboardingRequest:
+      type: object
+      properties:
+        healthConditions:
+          type: array
+          items:
+            type: string
+        allergies:
+          type: string
+        dietaryPreference:
+          type: string
+          enum: [vegetarian, vegan, non_vegetarian, eggetarian]
+        goal:
+          type: string
+        age:
+          type: integer
+          minimum: 1
+          maximum: 120
+        gender:
+          type: string
+          enum: [male, female, other]
+        heightCm:
+          type: number
+          minimum: 50
+        weightKg:
+          type: number
+          minimum: 1
+
+    DietPlanResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        targetCalories:
+          type: integer
+        targetProteinG:
+          type: number
+        targetCarbsG:
+          type: number
+        targetFatG:
+          type: number
+        assignedClientCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    DietPlanRequest:
+      type: object
+      required:
+        - name
+        - targetCalories
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        targetCalories:
+          type: integer
+          minimum: 100
+        targetProteinG:
+          type: number
+          minimum: 0
+        targetCarbsG:
+          type: number
+          minimum: 0
+        targetFatG:
+          type: number
+          minimum: 0
+
+    AssignPlanRequest:
+      type: object
+      required:
+        - clientId
+      properties:
+        clientId:
+          type: integer
+          format: int64
+
+    RevenueSummary:
+      type: object
+      properties:
+        totalRevenue:
+          type: number
+        monthlyRevenue:
+          type: number
+        monthOverMonthChange:
+          type: number
+        byPaymentMethod:
+          type: object
+          additionalProperties:
+            type: number
+        periodFrom:
+          type: string
+          format: date
+        periodTo:
+          type: string
+          format: date
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        clientId:
+          type: integer
+          format: int64
+        clientName:
+          type: string
+        type:
+          type: string
+          enum: [order, session_package, consultation]
+        amount:
+          type: number
+        paymentMethod:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time

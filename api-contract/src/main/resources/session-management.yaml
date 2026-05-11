@@ -1,0 +1,705 @@
+openapi: "3.0.3"
+info:
+  title: Diet App Session Management API
+  description: Yoga/exercise session scheduling, packages and policies
+  version: "1.0.0"
+
+servers:
+  - url: http://localhost:8080
+    description: Local Development
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Sessions
+    description: Session scheduling and management
+  - name: Packages
+    description: Client session package management
+  - name: Policies
+    description: Session booking policy management
+
+paths:
+
+  # ── Sessions ─────────────────────────────────────────────────────────────────
+
+  /api/v1/sessions:
+    get:
+      tags: [Sessions]
+      summary: Get all sessions (Admin)
+      operationId: getAllSessions
+      responses:
+        '200':
+          description: List of all sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SessionResponse'
+    post:
+      tags: [Sessions]
+      summary: Create one or more sessions (Admin). Creates 4 weekly sessions if repeatType=weekly.
+      operationId: createSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+      responses:
+        '201':
+          description: Session(s) created
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SessionResponse'
+        '400':
+          description: Validation error
+
+  /api/v1/sessions/my:
+    get:
+      tags: [Sessions]
+      summary: Get current authenticated user's sessions
+      operationId: getMySessions
+      responses:
+        '200':
+          description: Sessions for the authenticated client
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SessionResponse'
+
+  /api/v1/sessions/my/stats:
+    get:
+      tags: [Sessions]
+      summary: Get session stats for the current authenticated user
+      operationId: getMyStats
+      responses:
+        '200':
+          description: Session statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientSessionStats'
+
+  /api/v1/sessions/client/{clientId}:
+    get:
+      tags: [Sessions]
+      summary: Get sessions for a specific client (Admin)
+      operationId: getSessionsByClient
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+      responses:
+        '200':
+          description: Sessions for the given client
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SessionResponse'
+
+  /api/v1/sessions/client/{clientId}/stats:
+    get:
+      tags: [Sessions]
+      summary: Get session stats for a specific client (Admin)
+      operationId: getClientStats
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+      responses:
+        '200':
+          description: Session statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientSessionStats'
+
+  /api/v1/sessions/{id}:
+    get:
+      tags: [Sessions]
+      summary: Get a session by ID
+      operationId: getSession
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Session details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '404':
+          description: Session not found
+    put:
+      tags: [Sessions]
+      summary: Update session details (Admin)
+      operationId: updateSession
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSessionRequest'
+      responses:
+        '200':
+          description: Updated session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+
+  /api/v1/sessions/{id}/cancel:
+    patch:
+      tags: [Sessions]
+      summary: Cancel a session
+      operationId: cancelSession
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Cancelled session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+
+  /api/v1/sessions/{id}/complete:
+    patch:
+      tags: [Sessions]
+      summary: Mark a session as completed (Admin)
+      operationId: completeSession
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+        - name: notes
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Completed session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+
+  /api/v1/sessions/{id}/reschedule:
+    patch:
+      tags: [Sessions]
+      summary: Reschedule a session (policy enforced)
+      operationId: rescheduleSession
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RescheduleSessionRequest'
+      responses:
+        '200':
+          description: Rescheduled session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '422':
+          description: Policy violation (notice period or monthly limit)
+
+  /api/v1/sessions/{id}/accept-agreement:
+    patch:
+      tags: [Sessions]
+      summary: Accept the booking policy agreement for a session
+      operationId: acceptAgreement
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Session with agreement accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+
+  # ── Packages ─────────────────────────────────────────────────────────────────
+
+  /api/v1/packages:
+    get:
+      tags: [Packages]
+      summary: Get all packages (Admin)
+      operationId: getAllPackages
+      responses:
+        '200':
+          description: All packages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PackageResponse'
+    post:
+      tags: [Packages]
+      summary: Create a new package (Admin)
+      operationId: createPackage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePackageRequest'
+      responses:
+        '201':
+          description: Created package
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackageResponse'
+
+  /api/v1/packages/my:
+    get:
+      tags: [Packages]
+      summary: Get packages for the current authenticated user
+      operationId: getMyPackages
+      responses:
+        '200':
+          description: Packages for the authenticated client
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PackageResponse'
+
+  /api/v1/packages/client/{clientId}:
+    get:
+      tags: [Packages]
+      summary: Get packages for a specific client (Admin)
+      operationId: getClientPackages
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+      responses:
+        '200':
+          description: Packages for the given client
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PackageResponse'
+
+  /api/v1/packages/{id}:
+    put:
+      tags: [Packages]
+      summary: Update a package (Admin)
+      operationId: updatePackage
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePackageRequest'
+      responses:
+        '200':
+          description: Updated package
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackageResponse'
+    delete:
+      tags: [Packages]
+      summary: Delete a package (Admin)
+      operationId: deletePackage
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Package deleted
+
+  # ── Policies ─────────────────────────────────────────────────────────────────
+
+  /api/v1/policies/global:
+    get:
+      tags: [Policies]
+      summary: Get the global default policy
+      operationId: getGlobalPolicy
+      responses:
+        '200':
+          description: Global policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponse'
+    put:
+      tags: [Policies]
+      summary: Update the global default policy (Admin)
+      operationId: updateGlobalPolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePolicyRequest'
+      responses:
+        '200':
+          description: Updated global policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponse'
+
+  /api/v1/policies/overrides:
+    get:
+      tags: [Policies]
+      summary: Get all client-specific policy overrides (Admin)
+      operationId: getAllOverrides
+      responses:
+        '200':
+          description: All client overrides
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PolicyResponse'
+
+  /api/v1/policies/client/{clientId}/effective:
+    get:
+      tags: [Policies]
+      summary: Get the effective policy for a client (override or global)
+      operationId: getEffectivePolicy
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+      responses:
+        '200':
+          description: Effective policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponse'
+
+  /api/v1/policies/client/{clientId}:
+    get:
+      tags: [Policies]
+      summary: Get client-specific override if it exists (Admin)
+      operationId: getClientOverride
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+      responses:
+        '200':
+          description: Client override
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponse'
+        '204':
+          description: No override set for this client
+    put:
+      tags: [Policies]
+      summary: Set a client-specific policy override (Admin)
+      operationId: setClientOverride
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePolicyRequest'
+      responses:
+        '200':
+          description: Created/updated override
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponse'
+    delete:
+      tags: [Policies]
+      summary: Clear client-specific policy override (Admin)
+      operationId: clearClientOverride
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+      responses:
+        '204':
+          description: Override cleared
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    ClientIdPath:
+      name: clientId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+  schemas:
+
+    # ── Session Schemas ─────────────────────────────────────────────────────────
+
+    SessionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        clientId:
+          type: integer
+          format: int64
+        clientName:
+          type: string
+        type:
+          type: string
+          enum: [yoga, exercise]
+        sessionDate:
+          type: string
+          format: date
+        sessionTime:
+          type: string
+          example: "09:00 AM"
+        durationMinutes:
+          type: integer
+        repeatType:
+          type: string
+          enum: [none, weekly]
+        meetLink:
+          type: string
+        status:
+          type: string
+          enum: [scheduled, completed, cancelled]
+        agreementAccepted:
+          type: boolean
+        notes:
+          type: string
+        rescheduleHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/RescheduleHistoryItem'
+        createdAt:
+          type: string
+          format: date-time
+
+    RescheduleHistoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        fromDate:
+          type: string
+          format: date
+        fromTime:
+          type: string
+        toDate:
+          type: string
+          format: date
+        toTime:
+          type: string
+        rescheduledAt:
+          type: string
+          format: date-time
+
+    ClientSessionStats:
+      type: object
+      properties:
+        clientId:
+          type: integer
+          format: int64
+        total:
+          type: integer
+          format: int64
+        scheduled:
+          type: integer
+          format: int64
+        completed:
+          type: integer
+          format: int64
+        cancelled:
+          type: integer
+          format: int64
+        rescheduled:
+          type: integer
+          format: int64
+
+    CreateSessionRequest:
+      type: object
+      required:
+        - clientId
+        - type
+        - sessionDate
+        - sessionTime
+      properties:
+        clientId:
+          type: integer
+          format: int64
+        type:
+          type: string
+          enum: [yoga, exercise]
+        sessionDate:
+          type: string
+          format: date
+        sessionTime:
+          type: string
+          example: "09:00 AM"
+        durationMinutes:
+          type: integer
+          default: 60
+        repeatType:
+          type: string
+          enum: [none, weekly]
+          default: none
+        meetLink:
+          type: string
+        notes:
+          type: string
+
+    UpdateSessionRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [yoga, exercise]
+        sessionDate:
+          type: string
+          format: date
+        sessionTime:
+          type: string
+        durationMinutes:
+          type: integer
+        repeatType:
+          type: string
+          enum: [none, weekly]
+        meetLink:
+          type: string
+        notes:
+          type: string
+
+    RescheduleSessionRequest:
+      type: object
+      required:
+        - newDate
+        - newTime
+      properties:
+        newDate:
+          type: string
+          format: date
+        newTime:
+          type: string
+          example: "10:00 AM"
+
+    # ── Package Schemas ─────────────────────────────────────────────────────────
+
+    PackageResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        clientId:
+          type: integer
+          format: int64
+        clientName:
+          type: string
+        packageName:
+          type: string
+        sessionCount:
+          type: integer
+        sessionsUsed:
+          type: integer
+        sessionsRemaining:
+          type: integer
+        price:
+          type: number
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    CreatePackageRequest:
+      type: object
+      required:
+        - clientId
+        - packageName
+        - sessionCount
+        - price
+      properties:
+        clientId:
+          type: integer
+          format: int64
+        packageName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        sessionCount:
+          type: integer
+          minimum: 1
+        price:
+          type: number
+          minimum: 0
+
+    UpdatePackageRequest:
+      type: object
+      properties:
+        packageName:
+          type: string
+          maxLength: 200
+        sessionCount:
+          type: integer
+          minimum: 1
+        price:
+          type: number
+          minimum: 0
+        active:
+          type: boolean
+
+    # ── Policy Schemas ──────────────────────────────────────────────────────────
+
+    PolicyResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        clientId:
+          type: integer
+          format: int64
+        cancellationNoticeHours:
+          type: integer
+        maxReschedulePerMonth:
+          type: integer
+        global:
+          type: boolean
+
+    UpdatePolicyRequest:
+      type: object
+      properties:
+        cancellationNoticeHours:
+          type: integer
+          minimum: 0
+          maximum: 168
+        maxReschedulePerMonth:
+          type: integer
+          minimum: 0
+          maximum: 20

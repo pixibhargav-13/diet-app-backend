@@ -1,0 +1,542 @@
+openapi: "3.0.3"
+info:
+  title: Diet App Nutrition Management API
+  description: Meal logging, meal plans, food lookup and grocery list
+  version: "1.0.0"
+
+servers:
+  - url: http://localhost:8080
+    description: Local Development
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: MealLogs
+    description: Log and retrieve daily meal entries
+  - name: MealPlans
+    description: Weekly meal plans (client view and admin management)
+  - name: FoodLookup
+    description: Search food nutrition database
+  - name: GroceryList
+    description: Auto-generated grocery list from meal plan
+
+paths:
+
+  # ── Meal Logs ────────────────────────────────────────────────────────────────
+
+  /api/v1/nutrition/logs:
+    get:
+      tags: [MealLogs]
+      summary: Get meal logs for a specific date (current user)
+      operationId: getMealLogs
+      parameters:
+        - name: date
+          in: query
+          required: false
+          description: ISO date (YYYY-MM-DD). Defaults to today.
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Meal logs for the date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MealLogEntry'
+    post:
+      tags: [MealLogs]
+      summary: Log a new meal entry
+      operationId: logMeal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogMealRequest'
+      responses:
+        '201':
+          description: Logged meal entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MealLogEntry'
+
+  /api/v1/nutrition/logs/{id}:
+    delete:
+      tags: [MealLogs]
+      summary: Delete a meal log entry
+      operationId: deleteMealLog
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Deleted
+
+  /api/v1/nutrition/logs/admin/{clientId}:
+    get:
+      tags: [MealLogs]
+      summary: Get meal logs for a specific client on a date (Admin)
+      operationId: getClientMealLogs
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Meal logs for the client
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MealLogEntry'
+
+  /api/v1/nutrition/summary:
+    get:
+      tags: [MealLogs]
+      summary: Get daily nutrition summary (consumed vs goal)
+      operationId: getDaySummary
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Nutrition summary for the day
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaySummary'
+
+  # ── Meal Plans ───────────────────────────────────────────────────────────────
+
+  /api/v1/nutrition/plans:
+    get:
+      tags: [MealPlans]
+      summary: Get meal plan for a specific date (current user's assigned plan)
+      operationId: getMealPlanForDate
+      parameters:
+        - name: date
+          in: query
+          required: false
+          description: ISO date (YYYY-MM-DD). Defaults to today.
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Meal plan for the date
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MealPlan'
+
+  /api/v1/nutrition/plans/all:
+    get:
+      tags: [MealPlans]
+      summary: Get all meal plans (Admin)
+      operationId: getAllMealPlans
+      responses:
+        '200':
+          description: All meal plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MealPlan'
+    post:
+      tags: [MealPlans]
+      summary: Create a new meal plan (Admin)
+      operationId: createMealPlan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MealPlanRequest'
+      responses:
+        '201':
+          description: Created meal plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MealPlan'
+
+  /api/v1/nutrition/plans/{id}:
+    put:
+      tags: [MealPlans]
+      summary: Update a meal plan (Admin)
+      operationId: updateMealPlan
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MealPlanRequest'
+      responses:
+        '200':
+          description: Updated meal plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MealPlan'
+    delete:
+      tags: [MealPlans]
+      summary: Delete a meal plan (Admin)
+      operationId: deleteMealPlan
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Deleted
+
+  /api/v1/nutrition/plans/{id}/assign:
+    post:
+      tags: [MealPlans]
+      summary: Assign a meal plan to a client (Admin)
+      operationId: assignMealPlan
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignPlanRequest'
+      responses:
+        '200':
+          description: Plan assigned successfully
+
+  # ── Food Lookup ──────────────────────────────────────────────────────────────
+
+  /api/v1/nutrition/foods/search:
+    get:
+      tags: [FoodLookup]
+      summary: Search the food nutrition database
+      operationId: searchFoods
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Matching food items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FoodItem'
+
+  /api/v1/nutrition/foods/{id}:
+    get:
+      tags: [FoodLookup]
+      summary: Get full nutrition data for a specific food item
+      operationId: getFoodDetail
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Full nutrition details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoodItem'
+
+  # ── Grocery List ─────────────────────────────────────────────────────────────
+
+  /api/v1/nutrition/grocery-list:
+    get:
+      tags: [GroceryList]
+      summary: Get grocery list generated from the meal plan for a date range
+      operationId: getGroceryList
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Grocery list with categories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroceryList'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    ClientIdPath:
+      name: clientId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+  schemas:
+
+    MealLogEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        date:
+          type: string
+          format: date
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+        mealName:
+          type: string
+        kcal:
+          type: number
+        protein:
+          type: number
+        carbs:
+          type: number
+        fat:
+          type: number
+        fiber:
+          type: number
+        source:
+          type: string
+          enum: [planned, custom, quick]
+        photoUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    LogMealRequest:
+      type: object
+      required:
+        - mealType
+        - mealName
+        - kcal
+      properties:
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+        mealName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        kcal:
+          type: number
+          minimum: 0
+        protein:
+          type: number
+          minimum: 0
+          default: 0
+        carbs:
+          type: number
+          minimum: 0
+          default: 0
+        fat:
+          type: number
+          minimum: 0
+          default: 0
+        fiber:
+          type: number
+          minimum: 0
+          default: 0
+        source:
+          type: string
+          enum: [planned, custom, quick]
+          default: custom
+        photoUrl:
+          type: string
+
+    MacroTotals:
+      type: object
+      properties:
+        kcal:
+          type: number
+        protein:
+          type: number
+        carbs:
+          type: number
+        fat:
+          type: number
+        fiber:
+          type: number
+
+    DaySummary:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        consumed:
+          $ref: '#/components/schemas/MacroTotals'
+        goal:
+          $ref: '#/components/schemas/MacroTotals'
+        mealsLogged:
+          type: integer
+
+    MealPlanItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+        name:
+          type: string
+        kcal:
+          type: number
+        protein:
+          type: number
+        carbs:
+          type: number
+        fat:
+          type: number
+        fiber:
+          type: number
+        ingredients:
+          type: array
+          items:
+            type: string
+        prepNotes:
+          type: string
+        scheduledTime:
+          type: string
+          example: "08:00 AM"
+
+    MealPlan:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        meals:
+          type: array
+          items:
+            $ref: '#/components/schemas/MealPlanItem'
+        createdAt:
+          type: string
+          format: date-time
+
+    MealPlanRequest:
+      type: object
+      required:
+        - name
+        - meals
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        meals:
+          type: array
+          items:
+            $ref: '#/components/schemas/MealPlanItem'
+
+    AssignPlanRequest:
+      type: object
+      required:
+        - clientId
+      properties:
+        clientId:
+          type: integer
+          format: int64
+
+    FoodItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        servingSizeG:
+          type: number
+        kcalPer100g:
+          type: number
+        proteinPer100g:
+          type: number
+        carbsPer100g:
+          type: number
+        fatPer100g:
+          type: number
+        fiberPer100g:
+          type: number
+        source:
+          type: string
+          example: "USDA"
+
+    GroceryItem:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+          enum: [proteins, vegetables, grains, dairy, fruits, other]
+        quantity:
+          type: string
+        unit:
+          type: string
+
+    GroceryList:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroceryItem'
+        totalItems:
+          type: integer

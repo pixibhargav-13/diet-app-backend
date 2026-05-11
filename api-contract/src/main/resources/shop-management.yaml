@@ -1,0 +1,556 @@
+openapi: "3.0.3"
+info:
+  title: Diet App Shop Management API
+  description: Products catalogue, orders, wishlist and product reviews
+  version: "1.0.0"
+
+servers:
+  - url: http://localhost:8080
+    description: Local Development
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Products
+    description: Browse and manage the product catalogue
+  - name: Reviews
+    description: Product reviews and ratings
+  - name: Orders
+    description: Place and manage orders
+  - name: Wishlist
+    description: Save products to wishlist
+
+paths:
+
+  # ── Products ─────────────────────────────────────────────────────────────────
+
+  /api/v1/shop/products:
+    get:
+      tags: [Products]
+      summary: Get all products
+      operationId: getProducts
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductResponse'
+    post:
+      tags: [Products]
+      summary: Create a new product (Admin)
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+      responses:
+        '201':
+          description: Created product
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+
+  /api/v1/shop/products/{id}:
+    get:
+      tags: [Products]
+      summary: Get a single product by ID
+      operationId: getProduct
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '404':
+          description: Product not found
+    put:
+      tags: [Products]
+      summary: Update a product (Admin)
+      operationId: updateProduct
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+      responses:
+        '200':
+          description: Updated product
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+    delete:
+      tags: [Products]
+      summary: Delete a product (Admin)
+      operationId: deleteProduct
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Deleted
+
+  /api/v1/shop/products/{id}/stock:
+    patch:
+      tags: [Products]
+      summary: Update stock level for a product (Admin)
+      operationId: updateStock
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStockRequest'
+      responses:
+        '200':
+          description: Updated product
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+
+  # ── Reviews ──────────────────────────────────────────────────────────────────
+
+  /api/v1/shop/products/{id}/reviews:
+    get:
+      tags: [Reviews]
+      summary: Get reviews for a product
+      operationId: getProductReviews
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: List of reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductReview'
+    post:
+      tags: [Reviews]
+      summary: Submit a review for a product
+      operationId: submitReview
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+      responses:
+        '201':
+          description: Submitted review
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductReview'
+
+  # ── Orders ───────────────────────────────────────────────────────────────────
+
+  /api/v1/shop/orders:
+    get:
+      tags: [Orders]
+      summary: Get current user's orders
+      operationId: getMyOrders
+      responses:
+        '200':
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderResponse'
+    post:
+      tags: [Orders]
+      summary: Place a new order
+      operationId: placeOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaceOrderRequest'
+      responses:
+        '201':
+          description: Placed order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+
+  /api/v1/shop/orders/{id}:
+    get:
+      tags: [Orders]
+      summary: Get an order by ID
+      operationId: getOrder
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+
+  /api/v1/shop/orders/admin/all:
+    get:
+      tags: [Orders]
+      summary: Get all orders (Admin)
+      operationId: getAllOrders
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, confirmed, shipped, delivered, cancelled]
+      responses:
+        '200':
+          description: All orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderResponse'
+
+  /api/v1/shop/orders/admin/{id}/status:
+    patch:
+      tags: [Orders]
+      summary: Update order status (Admin)
+      operationId: updateOrderStatus
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrderStatusRequest'
+      responses:
+        '200':
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+
+  # ── Wishlist ─────────────────────────────────────────────────────────────────
+
+  /api/v1/shop/wishlist:
+    get:
+      tags: [Wishlist]
+      summary: Get current user's wishlist product IDs
+      operationId: getWishlist
+      responses:
+        '200':
+          description: Wishlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishlistResponse'
+
+  /api/v1/shop/wishlist/{productId}:
+    post:
+      tags: [Wishlist]
+      summary: Add a product to wishlist
+      operationId: addToWishlist
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Updated wishlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishlistResponse'
+    delete:
+      tags: [Wishlist]
+      summary: Remove a product from wishlist
+      operationId: removeFromWishlist
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Updated wishlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishlistResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+  schemas:
+
+    ProductResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        category:
+          type: string
+        imageUrl:
+          type: string
+        stockLevel:
+          type: integer
+        active:
+          type: boolean
+        averageRating:
+          type: number
+        reviewCount:
+          type: integer
+        nutritionInfo:
+          type: string
+        ingredients:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ProductRequest:
+      type: object
+      required:
+        - name
+        - price
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        price:
+          type: number
+          minimum: 0
+        category:
+          type: string
+        imageUrl:
+          type: string
+        stockLevel:
+          type: integer
+          minimum: 0
+          default: 0
+        active:
+          type: boolean
+          default: true
+        nutritionInfo:
+          type: string
+        ingredients:
+          type: string
+
+    UpdateStockRequest:
+      type: object
+      required:
+        - stockLevel
+      properties:
+        stockLevel:
+          type: integer
+          minimum: 0
+
+    ProductReview:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        productId:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        userName:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ReviewRequest:
+      type: object
+      required:
+        - rating
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+
+    OrderItem:
+      type: object
+      properties:
+        productId:
+          type: integer
+          format: int64
+        productName:
+          type: string
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+        subtotal:
+          type: number
+
+    DeliveryAddress:
+      type: object
+      required:
+        - line1
+        - phone
+      properties:
+        label:
+          type: string
+          example: "Home"
+        line1:
+          type: string
+        line2:
+          type: string
+        phone:
+          type: string
+
+    PlaceOrderRequest:
+      type: object
+      required:
+        - items
+        - deliveryAddress
+        - paymentMethod
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required:
+              - productId
+              - quantity
+            properties:
+              productId:
+                type: integer
+                format: int64
+              quantity:
+                type: integer
+                minimum: 1
+        deliveryAddress:
+          $ref: '#/components/schemas/DeliveryAddress'
+        paymentMethod:
+          type: string
+          enum: [cod, upi, card, netbanking]
+
+    OrderResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        clientName:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        subtotal:
+          type: number
+        handlingFee:
+          type: number
+        total:
+          type: number
+        status:
+          type: string
+          enum: [pending, confirmed, shipped, delivered, cancelled]
+        paymentMethod:
+          type: string
+        deliveryAddress:
+          $ref: '#/components/schemas/DeliveryAddress'
+        createdAt:
+          type: string
+          format: date-time
+
+    UpdateOrderStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [confirmed, shipped, delivered, cancelled]
+
+    WishlistResponse:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        productIds:
+          type: array
+          items:
+            type: integer
+            format: int64

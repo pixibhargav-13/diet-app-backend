@@ -1,0 +1,8 @@
+target/
+*.class
+*.jar
+*.war
+
+# Local dev config (contains real credentials — never commit)
+**/application-local.yaml
+.env

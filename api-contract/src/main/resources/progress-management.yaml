@@ -1,0 +1,541 @@
+openapi: "3.0.3"
+info:
+  title: Diet App Progress Management API
+  description: Weight tracking, body measurements, step count and daily hydration
+  version: "1.0.0"
+
+servers:
+  - url: http://localhost:8080
+    description: Local Development
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: WeightTracking
+    description: Log and retrieve bodyweight entries
+  - name: Measurements
+    description: Body measurement entries (waist, hip, chest, etc.)
+  - name: Steps
+    description: Daily step count tracking
+  - name: Hydration
+    description: Daily water intake logging and goal management
+
+paths:
+
+  # ── Weight Tracking ──────────────────────────────────────────────────────────
+
+  /api/v1/progress/weight:
+    get:
+      tags: [WeightTracking]
+      summary: Get weight history for current user
+      operationId: getWeightHistory
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of weight entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WeightEntry'
+    post:
+      tags: [WeightTracking]
+      summary: Log a new weight entry
+      operationId: logWeight
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WeightRequest'
+      responses:
+        '201':
+          description: Logged weight entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeightEntry'
+
+  /api/v1/progress/weight/{id}:
+    delete:
+      tags: [WeightTracking]
+      summary: Delete a weight entry
+      operationId: deleteWeightEntry
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Deleted
+
+  /api/v1/progress/weight/goal:
+    get:
+      tags: [WeightTracking]
+      summary: Get the user's goal weight
+      operationId: getWeightGoal
+      responses:
+        '200':
+          description: Current goal weight
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeightGoal'
+    put:
+      tags: [WeightTracking]
+      summary: Update the user's goal weight
+      operationId: updateWeightGoal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WeightGoal'
+      responses:
+        '200':
+          description: Updated goal weight
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeightGoal'
+
+  # ── Measurements ─────────────────────────────────────────────────────────────
+
+  /api/v1/progress/measurements:
+    get:
+      tags: [Measurements]
+      summary: Get body measurement history for current user
+      operationId: getMeasurements
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of measurement entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MeasurementEntry'
+    post:
+      tags: [Measurements]
+      summary: Log a new body measurement entry
+      operationId: logMeasurement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeasurementRequest'
+      responses:
+        '201':
+          description: Logged measurement entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeasurementEntry'
+
+  /api/v1/progress/measurements/{id}:
+    delete:
+      tags: [Measurements]
+      summary: Delete a measurement entry
+      operationId: deleteMeasurement
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Deleted
+
+  # ── Steps ────────────────────────────────────────────────────────────────────
+
+  /api/v1/progress/steps:
+    get:
+      tags: [Steps]
+      summary: Get step history for current user
+      operationId: getStepHistory
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of step entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StepEntry'
+    post:
+      tags: [Steps]
+      summary: Log or update steps for a date
+      operationId: logSteps
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StepRequest'
+      responses:
+        '200':
+          description: Logged/updated step entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepEntry'
+
+  /api/v1/progress/steps/summary:
+    get:
+      tags: [Steps]
+      summary: Get step summary (today, weekly avg, weekly total)
+      operationId: getStepSummary
+      responses:
+        '200':
+          description: Step summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepSummary'
+
+  # ── Hydration ────────────────────────────────────────────────────────────────
+
+  /api/v1/progress/hydration:
+    get:
+      tags: [Hydration]
+      summary: Get hydration entries for a specific date
+      operationId: getHydrationEntries
+      parameters:
+        - name: date
+          in: query
+          required: false
+          description: ISO date. Defaults to today.
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Hydration entries for the date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HydrationEntry'
+    post:
+      tags: [Hydration]
+      summary: Log a water intake entry
+      operationId: logHydration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HydrationRequest'
+      responses:
+        '201':
+          description: Logged hydration entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HydrationEntry'
+
+  /api/v1/progress/hydration/{id}:
+    delete:
+      tags: [Hydration]
+      summary: Delete a hydration entry
+      operationId: deleteHydrationEntry
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Deleted
+
+  /api/v1/progress/hydration/goal:
+    get:
+      tags: [Hydration]
+      summary: Get the user's daily hydration goal
+      operationId: getHydrationGoal
+      responses:
+        '200':
+          description: Daily hydration goal in ml
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HydrationGoal'
+    put:
+      tags: [Hydration]
+      summary: Update the user's daily hydration goal
+      operationId: updateHydrationGoal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HydrationGoal'
+      responses:
+        '200':
+          description: Updated goal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HydrationGoal'
+
+  /api/v1/progress/hydration/summary:
+    get:
+      tags: [Hydration]
+      summary: Get hydration summary for today (total ml, goal, streak)
+      operationId: getHydrationSummary
+      responses:
+        '200':
+          description: Hydration summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HydrationSummary'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+  schemas:
+
+    # ── Weight ──────────────────────────────────────────────────────────────────
+
+    WeightEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        weightKg:
+          type: number
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    WeightRequest:
+      type: object
+      required:
+        - weightKg
+        - date
+      properties:
+        weightKg:
+          type: number
+          minimum: 1
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
+
+    WeightGoal:
+      type: object
+      properties:
+        goalWeightKg:
+          type: number
+
+    # ── Measurements ────────────────────────────────────────────────────────────
+
+    MeasurementEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        date:
+          type: string
+          format: date
+        waistCm:
+          type: number
+        hipCm:
+          type: number
+        chestCm:
+          type: number
+        armCm:
+          type: number
+        thighCm:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+
+    MeasurementRequest:
+      type: object
+      required:
+        - date
+      properties:
+        date:
+          type: string
+          format: date
+        waistCm:
+          type: number
+          minimum: 0
+        hipCm:
+          type: number
+          minimum: 0
+        chestCm:
+          type: number
+          minimum: 0
+        armCm:
+          type: number
+          minimum: 0
+        thighCm:
+          type: number
+          minimum: 0
+
+    # ── Steps ───────────────────────────────────────────────────────────────────
+
+    StepEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        date:
+          type: string
+          format: date
+        steps:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    StepRequest:
+      type: object
+      required:
+        - date
+        - steps
+      properties:
+        date:
+          type: string
+          format: date
+        steps:
+          type: integer
+          minimum: 0
+
+    StepSummary:
+      type: object
+      properties:
+        todaySteps:
+          type: integer
+        weeklyAvg:
+          type: integer
+        weeklyTotal:
+          type: integer
+
+    # ── Hydration ───────────────────────────────────────────────────────────────
+
+    HydrationEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        date:
+          type: string
+          format: date
+        ml:
+          type: integer
+        source:
+          type: string
+          example: "bottle"
+        loggedAt:
+          type: string
+          format: date-time
+
+    HydrationRequest:
+      type: object
+      required:
+        - ml
+      properties:
+        ml:
+          type: integer
+          minimum: 1
+        source:
+          type: string
+          default: manual
+
+    HydrationGoal:
+      type: object
+      properties:
+        goalMl:
+          type: integer
+          minimum: 250
+
+    HydrationSummary:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        totalMl:
+          type: integer
+        goalMl:
+          type: integer
+        percentageComplete:
+          type: number
+        weeklyStreakDays:
+          type: integer
+        consistencyPercent:
+          type: number
