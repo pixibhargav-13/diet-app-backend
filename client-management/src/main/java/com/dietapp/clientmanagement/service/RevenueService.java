@@ -41,10 +41,10 @@ public class RevenueService {
                 .filter(t -> t.getCreatedAt() != null && t.getCreatedAt().isAfter(monthStart))
                 .mapToDouble(t -> t.getAmount().doubleValue()).sum();
 
-        Map<String, Double> byMethod = txns.stream()
+        Map<String, BigDecimal> byMethod = txns.stream()
                 .filter(t -> t.getPaymentMethod() != null)
                 .collect(Collectors.groupingBy(TransactionEntity::getPaymentMethod,
-                        Collectors.summingDouble(t -> t.getAmount().doubleValue())));
+                        Collectors.reducing(BigDecimal.ZERO, t -> t.getAmount(), BigDecimal::add)));
 
         return new RevenueSummary()
                 .totalRevenue(BigDecimal.valueOf(total))
